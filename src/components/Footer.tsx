@@ -1,5 +1,33 @@
 import { Link } from "react-router-dom";
 
+const Logo = ({ className = "h-9 w-9" }) => {
+  return (
+    <svg viewBox="0 0 100 100" className={className} fill="none">
+      <defs>
+        <linearGradient id="footer-gradBlue" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#1D4ED8" />
+          <stop offset="100%" stopColor="#22D3EE" />
+        </linearGradient>
+        <linearGradient id="footer-gradPurple" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#A855F7" />
+          <stop offset="100%" stopColor="#6D28D9" />
+        </linearGradient>
+      </defs>
+
+      {/* Left (Blue Bars) */}
+      <rect x="20" y="30" width="45" height="12" rx="6" fill="url(#footer-gradBlue)" />
+      <rect x="25" y="50" width="40" height="12" rx="6" fill="url(#footer-gradBlue)" />
+      <rect x="30" y="70" width="35" height="12" rx="6" fill="url(#footer-gradBlue)" />
+
+      {/* Right (Purple Bars) */}
+      <rect x="50" y="20" width="45" height="12" rx="6" fill="url(#footer-gradPurple)" />
+      <rect x="45" y="40" width="40" height="12" rx="6" fill="url(#footer-gradPurple)" />
+      <rect x="40" y="60" width="35" height="12" rx="6" fill="url(#footer-gradPurple)" />
+      <rect x="40" y="80" width="30" height="12" rx="6" fill="url(#footer-gradPurple)" />
+    </svg>
+  );
+};
+
 export default function Footer() {
   return (
     <footer className="border-t border-border bg-muted/50">
@@ -7,9 +35,7 @@ export default function Footer() {
         <div className="grid gap-8 md:grid-cols-4">
           <div>
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-                <span className="font-display text-sm font-bold text-primary-foreground">A</span>
-              </div>
+              <Logo className="h-9 w-9" />
               <span className="font-display text-lg font-bold">CrackDesk</span>
             </Link>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -47,4 +73,3 @@ export default function Footer() {
     </footer>
   );
 }
-
