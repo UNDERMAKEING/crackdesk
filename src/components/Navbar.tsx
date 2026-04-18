@@ -46,7 +46,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
 
-        {/* 🔥 LOGO SECTION */}
+        {/* LOGO */}
         <Link to="/" className="flex items-center gap-2">
           <div className="transition-transform duration-300 hover:scale-110">
             <Logo className="h-10 w-10" />
@@ -56,7 +56,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop nav */}
+        {/* Desktop Nav Links */}
         <div className="hidden items-center gap-1 md:flex">
           {navLinks.map((l) => (
             <Link
@@ -78,7 +78,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Desktop auth */}
+        {/* Desktop Auth */}
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
@@ -108,7 +108,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile toggle */}
+        {/* Mobile Toggle Button */}
         <button
           className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -117,7 +117,7 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile Menu Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -127,20 +127,72 @@ export default function Navbar() {
             className="overflow-hidden border-t border-border bg-background md:hidden"
           >
             <div className="flex flex-col gap-1 p-4">
+
+              {/* Nav Links */}
               {navLinks.map((l) => (
                 <Link
                   key={l.href}
                   to={l.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`rounded-lg px-3 py-2.5 text-sm ${
+                  className={`rounded-lg px-3 py-2.5 text-sm flex items-center gap-1.5 ${
                     location.pathname === l.href
                       ? "bg-secondary text-secondary-foreground"
                       : "text-muted-foreground"
                   }`}
                 >
                   {l.label}
+                  {l.badge && (
+                    <span className="bg-secondary text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {l.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
+
+              {/* ✅ Auth Section — FIXED for mobile */}
+              <div className="mt-3 border-t border-border pt-3 flex flex-col gap-2">
+                {user ? (
+                  <>
+                    <Link
+                      to="/profile"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary">
+                        <span className="text-xs font-bold text-primary">
+                          {userName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="font-medium">{userName}</span>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start px-3"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        handleLogout();
+                      }}
+                    >
+                      Log out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setMobileOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full">
+                        Log in
+                      </Button>
+                    </Link>
+                    <Link to="/signup" onClick={() => setMobileOpen(false)}>
+                      <Button variant="hero" size="sm" className="w-full">
+                        Sign up free
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+
             </div>
           </motion.div>
         )}

@@ -18,15 +18,15 @@ const Logo = ({ className = "h-9 w-9" }) => {
       </defs>
 
       {/* LEFT (Blue Bars) */}
-      <rect x="10" y="30" width="35" height="12" rx="6" fill="url(#gradBlue)" />
-      <rect x="10" y="50" width="30" height="12" rx="6" fill="url(#gradBlue)" />
-      <rect x="10" y="70" width="25" height="12" rx="6" fill="url(#gradBlue)" />
+      <rect x="20" y="30" width="45" height="12" rx="6" fill="url(#gradBlue)" />
+      <rect x="25" y="50" width="40" height="12" rx="6" fill="url(#gradBlue)" />
+      <rect x="30" y="70" width="35" height="12" rx="6" fill="url(#gradBlue)" />
 
       {/* RIGHT (Purple Bars) */}
-      <rect x="55" y="20" width="35" height="12" rx="6" fill="url(#gradPurple)" />
-      <rect x="55" y="40" width="30" height="12" rx="6" fill="url(#gradPurple)" />
-      <rect x="55" y="60" width="25" height="12" rx="6" fill="url(#gradPurple)" />
-      <rect x="55" y="80" width="20" height="12" rx="6" fill="url(#gradPurple)" />
+      <rect x="50" y="20" width="45" height="12" rx="6" fill="url(#gradPurple)" />
+      <rect x="45" y="40" width="40" height="12" rx="6" fill="url(#gradPurple)" />
+      <rect x="40" y="60" width="35" height="12" rx="6" fill="url(#gradPurple)" />
+      <rect x="40" y="80" width="30" height="12" rx="6" fill="url(#gradPurple)" />
     </svg>
   );
 };
