@@ -48,16 +48,11 @@ export default function MockTest() {
     const elapsed = Math.round((Date.now() - startTime) / 1000);
     setTimeTaken(elapsed);
     setPhase("results");
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
-
-      const finalScore = answers.reduce(
-        (acc, a, i) => acc + (a === questions[i]?.correct ? 1 : 0), 0
-      );
+      const finalScore = answers.reduce((acc, a, i) => acc + (a === questions[i]?.correct ? 1 : 0), 0);
       const title = jd.trim().slice(0, 80) + (jd.length > 80 ? "…" : "");
-
       const { error } = await supabase.from("test_results").insert({
         user_id: session.user.id,
         test_title: title,
@@ -67,9 +62,7 @@ export default function MockTest() {
         total_questions: questions.length,
         time_taken: elapsed,
       });
-
       if (error) console.error("[MockTest] Failed to save:", error.message);
-      else console.log("[MockTest] ✅ Saved to history");
     } catch (e: any) {
       console.error("[MockTest] Save error:", e.message);
     }
@@ -226,7 +219,7 @@ export default function MockTest() {
           {phase === "quiz" && questions[current] && (
             <motion.div key="quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mx-auto max-w-2xl">
               <div className="flex items-center justify-between mb-6">
-                <div className={`flex items-center gap-2 text-sm font-medium transition-colors ${isWarningTime ? "text-destructive" : "text-muted-foreground"}`}>
+                <div className={`flex items-center gap-2 text-sm font-medium ${isWarningTime ? "text-destructive" : "text-muted-foreground"}`}>
                   {isWarningTime
                     ? <AlertTriangle className="h-4 w-4 text-destructive animate-pulse" />
                     : <Clock className="h-4 w-4" />}
@@ -281,7 +274,7 @@ export default function MockTest() {
 
           {/* ── RESULTS PHASE ── */}
           {phase === "results" && (
-            <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mx-auto max-w-4xl">
+            <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mx-auto max-w-6xl">
 
               {/* Header */}
               <div className="text-center mb-8">
@@ -331,9 +324,7 @@ export default function MockTest() {
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {strongAreas().length > 0
-                        ? strongAreas().map((s) => (
-                            <span key={s} className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">{s}</span>
-                          ))
+                        ? strongAreas().map((s) => <span key={s} className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">{s}</span>)
                         : <span className="text-xs text-muted-foreground">None identified</span>}
                     </div>
                   </CardContent>
@@ -346,176 +337,186 @@ export default function MockTest() {
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {weakAreas().length > 0
-                        ? weakAreas().map((s) => (
-                            <span key={s} className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded-full">{s}</span>
-                          ))
+                        ? weakAreas().map((s) => <span key={s} className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded-full">{s}</span>)
                         : <span className="text-xs text-muted-foreground">None identified</span>}
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* ✅ SKILL BREAKDOWN — two column layout */}
-              <div className="mb-8">
-                <h3 className="font-display font-semibold text-foreground mb-4">Skill Breakdown</h3>
+              {/* ✅ SIDE BY SIDE — Skill Breakdown LEFT, Answer Review RIGHT */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-                {/* Table Header */}
-                <div className="grid grid-cols-2 gap-4 px-4 pb-2 border-b border-border">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Skill</span>
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Correct Answers</span>
-                </div>
+                {/* ── LEFT: Skill Breakdown ── */}
+                <div className="sticky top-20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-4 w-1 rounded-full bg-primary" />
+                    <h3 className="font-display font-semibold text-foreground">Skill Breakdown</h3>
+                    <span className="text-xs text-muted-foreground ml-auto">{skillBreakdown().length} skills</span>
+                  </div>
 
-                {/* Table Rows */}
-                <div className="space-y-2 mt-2">
-                  {skillBreakdown().map((s) => (
-                    <motion.div
-                      key={s.skill}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="grid grid-cols-2 gap-4 items-center rounded-xl border border-border bg-card px-4 py-3 shadow-card hover:shadow-card-hover transition-shadow"
-                    >
-                      {/* Left — Skill name + progress bar */}
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-2">
-                          {s.pct >= 70
-                            ? <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
-                            : <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />}
-                          <span className="text-sm font-medium text-foreground">{s.skill}</span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-secondary">
-                          <div
-                            className={`h-1.5 rounded-full transition-all duration-500 ${s.pct >= 70 ? "bg-success" : "bg-destructive"}`}
-                            style={{ width: `${s.pct}%` }}
-                          />
-                        </div>
-                      </div>
+                  <Card className="border-border overflow-hidden">
+                    {/* Header row */}
+                    <div className="grid grid-cols-2 px-4 py-2.5 bg-muted/50 border-b border-border">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Skill</span>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Score</span>
+                    </div>
 
-                      {/* Right — Score */}
-                      <div className="flex items-center justify-end gap-3">
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                          s.pct >= 70 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                        }`}>
-                          {s.pct}%
-                        </span>
-                        <span className="text-sm font-bold text-foreground tabular-nums">
-                          {s.correct}
-                          <span className="text-muted-foreground font-normal">/{s.total}</span>
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
+                    <div className="divide-y divide-border">
+                      {skillBreakdown().map((s, i) => (
+                        <motion.div
+                          key={s.skill}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.04 }}
+                          className="grid grid-cols-2 items-center px-4 py-3 hover:bg-muted/30 transition-colors"
+                        >
+                          {/* Left: skill name + bar */}
+                          <div className="flex flex-col gap-1.5 pr-4">
+                            <div className="flex items-center gap-2">
+                              {s.pct >= 70
+                                ? <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
+                                : <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />}
+                              <span className="text-sm font-medium text-foreground truncate">{s.skill}</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-secondary">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${s.pct}%` }}
+                                transition={{ delay: 0.3 + i * 0.04, duration: 0.6, ease: "easeOut" }}
+                                className={`h-1.5 rounded-full ${s.pct >= 70 ? "bg-success" : "bg-destructive"}`}
+                              />
+                            </div>
+                          </div>
 
-              {/* ✅ ANSWER REVIEW — two column layout */}
-              <div className="mb-8">
-                <h3 className="font-display font-semibold text-foreground mb-1">Answer Review</h3>
-                <p className="text-xs text-muted-foreground mb-4">Left — your answer · Right — correct answer</p>
-
-                {/* Table Header */}
-                <div className="grid grid-cols-2 gap-4 px-4 pb-2 border-b border-border">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Answer</span>
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Correct Answer</span>
-                </div>
-
-                <div className="space-y-3 mt-3">
-                  {questions.map((q, i) => {
-                    const userAns = answers[i];
-                    const isCorrect = userAns === q.correct;
-                    const isSkipped = userAns === null;
-
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className={`rounded-xl border bg-card shadow-card overflow-hidden ${
-                          isCorrect ? "border-success/30" : isSkipped ? "border-border" : "border-destructive/30"
-                        }`}
-                      >
-                        {/* Question row spanning full width */}
-                        <div className="flex items-start gap-3 px-4 pt-4 pb-3 border-b border-border/50">
-                          <span className={`shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                            isCorrect ? "bg-success/10 text-success"
-                              : isSkipped ? "bg-muted text-muted-foreground"
-                              : "bg-destructive/10 text-destructive"
-                          }`}>
-                            {i + 1}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground leading-snug">{q.question}</p>
-                            <span className="mt-1 inline-block text-xs font-semibold text-primary bg-secondary px-2 py-0.5 rounded">
-                              {q.skill}
+                          {/* Right: score */}
+                          <div className="flex items-center justify-end gap-2">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              s.pct >= 70 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                            }`}>
+                              {s.pct}%
+                            </span>
+                            <span className="text-sm font-bold text-foreground tabular-nums">
+                              {s.correct}<span className="text-muted-foreground font-normal">/{s.total}</span>
                             </span>
                           </div>
-                          {/* Status badge */}
-                          <div className="shrink-0">
-                            {isCorrect ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 px-2 py-1 rounded-full">
-                                <CheckCircle2 className="h-3 w-3" /> Correct
-                              </span>
-                            ) : isSkipped ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                                — Skipped
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-destructive bg-destructive/10 px-2 py-1 rounded-full">
-                                <XCircle className="h-3 w-3" /> Wrong
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Two column answer row */}
-                        <div className="grid grid-cols-2 divide-x divide-border/50">
-
-                          {/* LEFT — Your answer */}
-                          <div className={`px-4 py-3 ${
-                            isSkipped ? "bg-muted/30"
-                              : isCorrect ? "bg-success/5"
-                              : "bg-destructive/5"
-                          }`}>
-                            <p className={`text-xs font-semibold mb-1.5 ${
-                              isSkipped ? "text-muted-foreground"
-                                : isCorrect ? "text-success"
-                                : "text-destructive"
-                            }`}>
-                              {isSkipped ? "Not answered" : isCorrect ? "Your answer ✓" : "Your answer ✗"}
-                            </p>
-                            {isSkipped ? (
-                              <p className="text-xs text-muted-foreground italic">Skipped</p>
-                            ) : (
-                              <p className="text-sm text-foreground">
-                                <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold mr-2 ${
-                                  isCorrect ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
-                                }`}>
-                                  {String.fromCharCode(65 + userAns!)}
-                                </span>
-                                {q.options[userAns!]}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* RIGHT — Correct answer */}
-                          <div className="px-4 py-3 bg-success/5">
-                            <p className="text-xs font-semibold text-success mb-1.5">Correct answer</p>
-                            <p className="text-sm text-foreground">
-                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold mr-2 bg-success/20 text-success">
-                                {String.fromCharCode(65 + q.correct)}
-                              </span>
-                              {q.options[q.correct]}
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </Card>
                 </div>
+
+                {/* ── RIGHT: Answer Review ── */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-4 w-1 rounded-full bg-primary" />
+                    <h3 className="font-display font-semibold text-foreground">Answer Review</h3>
+                    <span className="text-xs text-muted-foreground ml-auto">{questions.length} questions</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {questions.map((q, i) => {
+                      const userAns = answers[i];
+                      const isCorrect = userAns === q.correct;
+                      const isSkipped = userAns === null;
+
+                      return (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.03 }}
+                          className={`rounded-xl border bg-card shadow-card overflow-hidden ${
+                            isCorrect ? "border-success/30"
+                              : isSkipped ? "border-border"
+                              : "border-destructive/30"
+                          }`}
+                        >
+                          {/* Question header */}
+                          <div className="flex items-start gap-3 px-4 pt-3 pb-2.5 border-b border-border/50">
+                            <span className={`shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                              isCorrect ? "bg-success/10 text-success"
+                                : isSkipped ? "bg-muted text-muted-foreground"
+                                : "bg-destructive/10 text-destructive"
+                            }`}>
+                              {i + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground leading-snug">{q.question}</p>
+                              <span className="mt-1 inline-block text-xs font-semibold text-primary bg-secondary px-2 py-0.5 rounded">
+                                {q.skill}
+                              </span>
+                            </div>
+                            <div className="shrink-0">
+                              {isCorrect ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 px-2 py-1 rounded-full">
+                                  <CheckCircle2 className="h-3 w-3" /> Correct
+                                </span>
+                              ) : isSkipped ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                                  — Skipped
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-destructive bg-destructive/10 px-2 py-1 rounded-full">
+                                  <XCircle className="h-3 w-3" /> Wrong
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Two column: Your answer | Correct answer */}
+                          <div className="grid grid-cols-2 divide-x divide-border/50">
+
+                            {/* LEFT col — Your answer */}
+                            <div className={`px-3 py-2.5 ${
+                              isSkipped ? "bg-muted/20"
+                                : isCorrect ? "bg-success/5"
+                                : "bg-destructive/5"
+                            }`}>
+                              <p className={`text-xs font-semibold mb-1.5 ${
+                                isSkipped ? "text-muted-foreground"
+                                  : isCorrect ? "text-success"
+                                  : "text-destructive"
+                              }`}>
+                                {isSkipped ? "Not answered" : isCorrect ? "Your answer ✓" : "Your answer ✗"}
+                              </p>
+                              {isSkipped ? (
+                                <p className="text-xs text-muted-foreground italic">Skipped</p>
+                              ) : (
+                                <div className="flex items-start gap-2">
+                                  <span className={`shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+                                    isCorrect ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
+                                  }`}>
+                                    {String.fromCharCode(65 + userAns!)}
+                                  </span>
+                                  <p className="text-xs text-foreground leading-relaxed">{q.options[userAns!]}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* RIGHT col — Correct answer */}
+                            <div className="px-3 py-2.5 bg-success/5">
+                              <p className="text-xs font-semibold text-success mb-1.5">Correct answer</p>
+                              <div className="flex items-start gap-2">
+                                <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold bg-success/20 text-success">
+                                  {String.fromCharCode(65 + q.correct)}
+                                </span>
+                                <p className="text-xs text-foreground leading-relaxed">{q.options[q.correct]}</p>
+                              </div>
+                            </div>
+
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+
               </div>
+              {/* END side by side */}
 
               {/* Action Buttons */}
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex flex-col gap-3 sm:flex-row mt-10">
                 <Button variant="hero" className="flex-1 gap-2" onClick={downloadPDF}>
                   <Download className="h-4 w-4" /> Download Certificate
                 </Button>

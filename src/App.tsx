@@ -36,6 +36,8 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />  {/* ✅ PUBLIC */}
+          <Route path="/reset-password" element={<ResetPassword />} />    {/* ✅ PUBLIC */}
 
           {/* PROTECTED - Regular Users */}
           <Route path="/dashboard" element={
@@ -65,12 +67,6 @@ const App = () => (
           <Route path="/admin/seeder" element={
             <ProtectedRoute><AdminSeeder /></ProtectedRoute>
           } />
-          <Route path="/forgot-password" element={
-            <ProtectedRoute><ForgotPassword /></ProtectedRoute>
-          } />
-          <Route path="/reset-password" element={
-            <ProtectedRoute><ResetPassword /></ProtectedRoute>
-          } />
           <Route path="/ai-interview/analysis" element={
             <ProtectedRoute><InterviewAnalysis /></ProtectedRoute>
           } />
@@ -91,4 +87,3 @@ const App = () => (
 );
 
 export default App;
-

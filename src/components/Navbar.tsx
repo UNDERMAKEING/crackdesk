@@ -52,7 +52,7 @@ export default function Navbar() {
             <Logo className="h-10 w-10" />
           </div>
           <span className="font-display text-xl font-bold text-foreground">
-            Crack<span className="text-gradient">desk</span>
+            Crack<span className="text-gradient">Desk</span>
           </span>
         </Link>
 

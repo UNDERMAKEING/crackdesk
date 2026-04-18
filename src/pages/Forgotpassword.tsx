@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import Logo from "@/components/Logo";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -37,7 +38,7 @@ export default function ForgotPassword() {
         <div className="max-w-md px-12 text-center">
           <div className="mb-6 flex justify-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-foreground/10 backdrop-blur">
-              <span className="font-display text-3xl font-bold text-primary-foreground">A</span>
+              <Logo className="h-10 w-10" />
             </div>
           </div>
           <h2 className="font-display text-3xl font-bold text-primary-foreground">Reset Password</h2>
@@ -54,7 +55,7 @@ export default function ForgotPassword() {
           {/* Logo (mobile) */}
           <Link to="/" className="mb-8 flex items-center gap-2 lg:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-              <span className="font-display text-lg font-bold text-primary-foreground">A</span>
+              <Logo className="h-6 w-6" />
             </div>
             <span className="font-display text-xl font-bold">CrackDesk</span>
           </Link>
@@ -131,4 +132,3 @@ export default function ForgotPassword() {
     </div>
   );
 }
-
