@@ -1,4 +1,4 @@
-const GROQ_API_KEY = "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";
+const GROQ_API_KEY = "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";
 
 export interface Question {
   question: string;

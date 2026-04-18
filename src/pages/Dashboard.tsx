@@ -243,9 +243,9 @@ export default function Dashboard() {
         {/* Top Stat Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
           {[
-            { label: "Tests Taken", value: stats.testsTaken, prefix: "", suffix: "", badge: "12.4%", up: true, icon: BookOpen },
-            { label: "Average Score", value: stats.avgScore, prefix: "", suffix: "%", badge: "8.1%", up: true, icon: TrendingUp },
-            { label: "Best Score", value: stats.bestScore, prefix: "", suffix: "%", badge: "5.3%", up: false, icon: Award },
+            { label: "Tests Taken", value: stats.testsTaken, prefix: "", suffix: "", badge: "0.0%", up: true, icon: BookOpen },
+            { label: "Average Score", value: stats.avgScore, prefix: "", suffix: "%", badge: "0.0%", up: true, icon: TrendingUp },
+            { label: "Best Score", value: stats.bestScore, prefix: "", suffix: "%", badge: "0.0%", up: false, icon: Award },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
               <div style={CARD}>
@@ -320,7 +320,7 @@ export default function Dashboard() {
                   <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 26, color: "#fff", margin: 0 }}>
                     {stats.testsTaken}
                   </p>
-                  <Badge value="8.3%" up={true} />
+                  <Badge value="0.0%" up={true} />
                 </div>
                 <button style={{
                   background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
