@@ -1,6 +1,5 @@
-const GROQ_API_KEY = "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";
-console.log("API KEY:", GROQ_API_KEY);
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_API_KEY = "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";
+const GROQ_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 interface InterviewAIParams {
   action: string;
@@ -11,7 +10,7 @@ interface InterviewAIParams {
 
 export async function callInterviewAI({ systemPrompt, userMessage, maxTokens }: InterviewAIParams): Promise<string> {
   if (!GROQ_API_KEY) {
-    throw new Error("VITE_GROQ_API_KEY is not set in your .env file");
+    throw new Error("API key is not set");
   }
 
   const enhancedSystem = systemPrompt + "\n\nCRITICAL: Output ONLY the raw JSON object. No markdown. No backticks. No explanation. Start your response with { and end with }";
@@ -21,9 +20,11 @@ export async function callInterviewAI({ systemPrompt, userMessage, maxTokens }: 
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${GROQ_API_KEY}`,
+      "HTTP-Referer": "https://crackdesk.vercel.app/", // replace with your actual Vercel URL
+      "X-Title": "Interview AI",
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "meta-llama/llama-3.3-70b-instruct",
       messages: [
         { role: "system", content: enhancedSystem },
         { role: "user", content: userMessage },
@@ -35,26 +36,25 @@ export async function callInterviewAI({ systemPrompt, userMessage, maxTokens }: 
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`Groq API error: ${response.status} - ${err}`);
+    throw new Error(`API error: ${response.status} - ${err}`);
   }
 
-  // Read as text directly from the response body
   const text = await response.text();
-  console.log("Raw text response:", text);
+  console.log("Raw response:", text);
 
   let data: any;
   try {
     data = JSON.parse(text);
   } catch {
-    throw new Error(`Failed to parse Groq response: ${text.slice(0, 200)}`);
+    throw new Error(`Failed to parse response: ${text.slice(0, 200)}`);
   }
 
   const content = data?.choices?.[0]?.message?.content;
   if (!content) {
-    throw new Error(`No content in Groq response: ${JSON.stringify(data).slice(0, 200)}`);
+    throw new Error(`No content in response: ${JSON.stringify(data).slice(0, 200)}`);
   }
 
-  console.log("Groq content:", content);
+  console.log("AI content:", content);
   return content;
 }
 
@@ -80,4 +80,3 @@ export function parseAIJson(raw: string): any {
     throw new Error("AI returned invalid JSON. Please try again.");
   }
 }
-

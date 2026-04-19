@@ -1,0 +1,15 @@
+{
+  "rewrites": [
+    {
+      "source": "/groq/:path*",
+      "destination": "https://api.groq.com/:path*"
+    }
+  ]
+}{
+  "rewrites": [
+    {
+      "source": "/groq/:path*",
+      "destination": "https://api.groq.com/:path*"
+    }
+  ]
+}
