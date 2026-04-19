@@ -7,46 +7,22 @@ import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-// ─────────────────────────────────────────────
-// ✅ CALL THIS after every test ends.
-// Import it in your quiz result page like:
-//   import { saveTestResult } from "@/pages/TestHistory";
-// ─────────────────────────────────────────────
 export async function saveTestResult(payload: {
   test_title: string;
   sector: string;
   level: string;
   score: number;
   total_questions: number;
-  time_taken: number; // seconds
+  time_taken: number;
 }) {
-  // Get current logged-in user
   const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
-
-  if (sessionErr) {
-    console.error("[saveTestResult] Session error:", sessionErr.message);
-    return;
-  }
-  if (!session?.user) {
-    console.warn("[saveTestResult] No user logged in — result not saved.");
-    return;
-  }
-
-  const { error } = await supabase.from("test_results").insert({
-    user_id: session.user.id,
-    ...payload,
-  });
-
-  if (error) {
-    console.error("[saveTestResult] DB insert error:", error.message);
-  } else {
-    console.log("[saveTestResult] ✅ Saved successfully");
-  }
+  if (sessionErr) { console.error("[saveTestResult] Session error:", sessionErr.message); return; }
+  if (!session?.user) { console.warn("[saveTestResult] No user logged in — result not saved."); return; }
+  const { error } = await supabase.from("test_results").insert({ user_id: session.user.id, ...payload });
+  if (error) console.error("[saveTestResult] DB insert error:", error.message);
+  else console.log("[saveTestResult] ✅ Saved successfully");
 }
 
-// ─────────────────────────────────────────────
-// Types & helpers
-// ─────────────────────────────────────────────
 interface TestResult {
   id: string;
   test_title: string;
@@ -61,14 +37,18 @@ interface TestResult {
 type Filter = "all" | "high" | "mid" | "low";
 
 function getPct(r: TestResult) {
+  if (!r.score || !r.total_questions) return 0;
   return Math.round((r.score / r.total_questions) * 100);
 }
+
 function formatTime(s: number) {
   return `${Math.floor(s / 60)}m ${s % 60}s`;
 }
+
 function getColor(pct: number) {
   return pct >= 70 ? "#16a34a" : pct >= 50 ? "#d97706" : "#dc2626";
 }
+
 function getBgClass(pct: number) {
   return pct >= 70
     ? "bg-green-50 text-green-700"
@@ -77,9 +57,6 @@ function getBgClass(pct: number) {
     : "bg-red-50 text-red-700";
 }
 
-// ─────────────────────────────────────────────
-// Score ring
-// ─────────────────────────────────────────────
 function ScoreRing({ pct }: { pct: number }) {
   const r = 18, cx = 22, cy = 22, circ = 2 * Math.PI * r;
   const dash = circ * (pct / 100);
@@ -100,9 +77,6 @@ function ScoreRing({ pct }: { pct: number }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// Bar chart
-// ─────────────────────────────────────────────
 function MiniBarChart({ results }: { results: TestResult[] }) {
   const last10 = results.slice(0, 10).reverse();
   if (!last10.length) return null;
@@ -132,9 +106,6 @@ function MiniBarChart({ results }: { results: TestResult[] }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// Skeleton loader
-// ─────────────────────────────────────────────
 function SkeletonCard() {
   return (
     <div className="bg-white border border-border rounded-xl p-4 flex items-center gap-4 animate-pulse">
@@ -155,9 +126,6 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "low", label: "< 50%" },
 ];
 
-// ─────────────────────────────────────────────
-// Main page
-// ─────────────────────────────────────────────
 export default function TestHistory() {
   const [results, setResults] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,9 +137,7 @@ export default function TestHistory() {
 
     async function loadResults() {
       try {
-        // ✅ FIX: Use getSession() directly — more reliable than onAuthStateChange
         const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
-
         if (sessionErr) throw new Error(sessionErr.message);
         if (!session?.user) {
           if (mounted) setLoading(false);
@@ -185,6 +151,9 @@ export default function TestHistory() {
           .order("created_at", { ascending: false });
 
         if (dbErr) throw new Error(dbErr.message);
+
+        console.log("Results from DB:", data); // ← check values in console
+
         if (mounted) setResults(data ?? []);
       } catch (e: any) {
         console.error("[TestHistory] Load error:", e.message);
@@ -207,30 +176,34 @@ export default function TestHistory() {
   });
 
   const totalTests = results.length;
-  const avgScore = totalTests > 0
-    ? Math.round(results.reduce((a, r) => a + getPct(r), 0) / totalTests)
+
+  // ✅ Fixed: filter out invalid results before calculating
+  const validResults = results.filter(r => r.score != null && r.total_questions > 0);
+
+  const avgScore = validResults.length > 0
+    ? Math.round(validResults.reduce((a, r) => a + getPct(r), 0) / validResults.length)
     : 0;
-  const bestScore = totalTests > 0 ? Math.max(...results.map(getPct)) : 0;
+
+  const bestScore = validResults.length > 0
+    ? Math.max(...validResults.map(getPct))
+    : 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
 
-        {/* Header */}
         <div className="mb-6">
           <h1 className="font-display text-2xl font-bold tracking-tight">Test History</h1>
           <p className="text-sm text-muted-foreground mt-1">All your past attempts and progress</p>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
             ⚠️ {error}
           </div>
         )}
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-5">
           {[
             { label: "Total tests", value: totalTests.toString(), color: "" },
@@ -246,10 +219,8 @@ export default function TestHistory() {
           ))}
         </div>
 
-        {/* Bar chart */}
         {!loading && totalTests > 0 && <MiniBarChart results={results} />}
 
-        {/* Filters */}
         {!loading && totalTests > 0 && (
           <div className="flex gap-2 flex-wrap mb-4">
             {FILTERS.map((f) => (
@@ -268,7 +239,6 @@ export default function TestHistory() {
           </div>
         )}
 
-        {/* Content */}
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
@@ -332,4 +302,3 @@ export default function TestHistory() {
     </div>
   );
 }
-
