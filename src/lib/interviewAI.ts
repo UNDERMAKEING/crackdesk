@@ -1,4 +1,5 @@
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const GROQ_API_KEY = "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";
+console.log("API KEY:", GROQ_API_KEY);
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 interface InterviewAIParams {
