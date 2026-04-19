@@ -1,4 +1,4 @@
-const GROQ_API_KEY = "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";
+const GROQ_API_KEY = "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";
 console.log("API KEY:", GROQ_API_KEY);
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
