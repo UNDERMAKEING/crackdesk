@@ -1,12 +1,3 @@
-const GROQ_API_KEY = "dummy"; // not used anymore
-
-export interface Question {
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string;
-}
-
 export type GeneratedQuestion = {
   question: string;
   options: string[];
@@ -37,9 +28,6 @@ correct is the index (0-3) of the correct option. skill is a short category like
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${GROQ_API_KEY}`,
-      "HTTP-Referer": window.location.origin,
-      "X-Title": "CrackDesk"
     },
     body: JSON.stringify({
       model: "google/gemini-2.0-flash-001",
@@ -60,4 +48,3 @@ correct is the index (0-3) of the correct option. skill is a short category like
   const cleaned = text.replace(/```json|```/g, "").trim();
   return JSON.parse(cleaned);
 }
-
