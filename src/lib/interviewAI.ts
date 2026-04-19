@@ -1,4 +1,4 @@
-const GROQ_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+const GROQ_API_URL = "/api/ai";
 
 interface InterviewAIParams {
   action: string;
@@ -8,9 +8,6 @@ interface InterviewAIParams {
 }
 
 export async function callInterviewAI({ systemPrompt, userMessage, maxTokens }: InterviewAIParams): Promise<string> {
-  if (!GROQ_API_KEY) {
-    throw new Error("API key is not set");
-  }
 
   const enhancedSystem = systemPrompt + "\n\nCRITICAL: Output ONLY the raw JSON object. No markdown. No backticks. No explanation. Start your response with { and end with }";
 
@@ -18,9 +15,6 @@ export async function callInterviewAI({ systemPrompt, userMessage, maxTokens }: 
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${GROQ_API_KEY}`,
-      "HTTP-Referer": "https://crackdesk.vercel.app/", // replace with your actual Vercel URL
-      "X-Title": "Interview AI",
     },
     body: JSON.stringify({
       model: "meta-llama/llama-3.3-70b-instruct",

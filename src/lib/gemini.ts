@@ -1,4 +1,4 @@
-const GROQ_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+const GROQ_API_KEY = "dummy"; // not used anymore
 
 export interface Question {
   question: string;
@@ -33,7 +33,7 @@ Return ONLY a valid JSON array with exactly 20 questions in this exact format:
 ]
 correct is the index (0-3) of the correct option. skill is a short category like "React", "SQL", "System Design", etc. Return only the JSON array, no other text.`;
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const response = await fetch("/api/ai", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
