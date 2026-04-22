@@ -74,8 +74,8 @@ export default function Signup() {
     }
 
     if (data.user) {
-      await (supabase.from("profiles").upsert({
-        id: data.user.id,        // ✅ must be id
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        id: data.user.id,
         full_name: fullName,
         email,
         college_name: college,
@@ -83,7 +83,11 @@ export default function Signup() {
         plan_type: "free",
         avatar_key: "adventurer:luna",
         avatar_url: null,
-      } as any) as any);
+      });
+
+      if (profileError) {
+        console.error("Profile creation failed:", profileError.message);
+      }
 
       localStorage.setItem("generating_questions", "true");
       localStorage.setItem("generating_departments", JSON.stringify(selectedDepts));
