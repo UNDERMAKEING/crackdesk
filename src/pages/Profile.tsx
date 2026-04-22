@@ -14,7 +14,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { getDepartmentMeta } from "@/lib/studentQuestions";
 import { toast } from "sonner";
-import AvatarPicker, { AvatarImg } from "./AvatarPicker";   // ← module import
+import AvatarPicker, { AvatarImg } from "./AvatarpPicker";   // ← module import
 
 interface ProfileData {
   full_name:   string;
