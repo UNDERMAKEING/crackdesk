@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Shuffle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase"; // 👈 NEW
 
 /* ── Avatar catalogue ──────────────────────────────────────── */
 
@@ -16,41 +17,33 @@ type AvatarStyle =
   | "pixel-art";
 
 interface AvatarDef {
-  key:   string;   // unique id stored in DB/localStorage  e.g. "adventurer:luna"
+  key:   string;
   style: AvatarStyle;
   seed:  string;
   label: string;
 }
 
 const AVATAR_LIST: AvatarDef[] = [
-  // ── Adventurer (warm illustrated)
   { key:"adventurer:luna",   style:"adventurer",         seed:"luna",    label:"Luna"    },
   { key:"adventurer:felix",  style:"adventurer",         seed:"felix",   label:"Felix"   },
   { key:"adventurer:nova",   style:"adventurer",         seed:"nova",    label:"Nova"    },
   { key:"adventurer:zara",   style:"adventurer",         seed:"zara",    label:"Zara"    },
-  // ── Adventurer Neutral (clean)
   { key:"adv-neutral:sage",  style:"adventurer-neutral", seed:"sage",    label:"Sage"    },
   { key:"adv-neutral:river", style:"adventurer-neutral", seed:"river",   label:"River"   },
-  // ── Micah (modern illustrated)
   { key:"micah:kai",         style:"micah",              seed:"kai",     label:"Kai"     },
   { key:"micah:eden",        style:"micah",              seed:"eden",    label:"Eden"    },
   { key:"micah:orion",       style:"micah",              seed:"orion",   label:"Orion"   },
   { key:"micah:stella",      style:"micah",              seed:"stella",  label:"Stella"  },
-  // ── Notionists (3-D toon feel)
   { key:"notionists:maya",   style:"notionists",         seed:"maya",    label:"Maya"    },
   { key:"notionists:leo",    style:"notionists",         seed:"leo",     label:"Leo"     },
   { key:"notionists:aria",   style:"notionists",         seed:"aria",    label:"Aria"    },
   { key:"notionists:cyrus",  style:"notionists",         seed:"cyrus",   label:"Cyrus"   },
-  // ── Lorelei (soft portrait)
   { key:"lorelei:dawn",      style:"lorelei",            seed:"dawn",    label:"Dawn"    },
   { key:"lorelei:ash",       style:"lorelei",            seed:"ash",     label:"Ash"     },
-  // ── Bottts Neutral (robot / techy)
   { key:"bottts:rex",        style:"bottts-neutral",     seed:"rex",     label:"Rex"     },
   { key:"bottts:byte",       style:"bottts-neutral",     seed:"byte",    label:"Byte"    },
-  // ── Fun Emoji
   { key:"emoji:smile",       style:"fun-emoji",          seed:"smile",   label:"Smile"   },
   { key:"emoji:cool",        style:"fun-emoji",          seed:"cool",    label:"Cool"    },
-  // ── Pixel Art
   { key:"pixel:hero",        style:"pixel-art",          seed:"hero",    label:"Hero"    },
   { key:"pixel:quest",       style:"pixel-art",          seed:"quest",   label:"Quest"   },
   { key:"pixel:byte",        style:"pixel-art",          seed:"byte",    label:"Byte"    },
@@ -102,13 +95,15 @@ export function AvatarImg({
 /* ── Main AvatarPicker modal ─────────────────────────────────── */
 interface AvatarPickerProps {
   currentKey:  string | null | undefined;
-  onSelect:    (key: string) => void;
+  onSelect:    (key: string, url: string) => void; // 👈 now passes url too
   onClose:     () => void;
+  userId:      string; // 👈 NEW
 }
 
-export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPickerProps) {
+export default function AvatarPicker({ currentKey, onSelect, onClose, userId }: AvatarPickerProps) {
   const [selected,    setSelected]    = useState<string>(currentKey || "adventurer:luna");
   const [activeStyle, setActiveStyle] = useState<AvatarStyle | "all">("all");
+  const [saving,      setSaving]      = useState(false); // 👈 NEW
 
   const visible = activeStyle === "all"
     ? AVATAR_LIST
@@ -120,11 +115,29 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
     setSelected(pick.key);
   };
 
-  const handleConfirm = () => { onSelect(selected); onClose(); };
+  // 👇 NEW: saves to Supabase before calling onSelect
+  const handleConfirm = async () => {
+    setSaving(true);
+    const url = avatarUrl(selected);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_key: selected, avatar_url: url })
+      .eq("user_id", userId);
+
+    setSaving(false);
+
+    if (error) {
+      console.error("Failed to save avatar:", error.message);
+      return;
+    }
+
+    onSelect(selected, url);
+    onClose();
+  };
 
   return (
     <AnimatePresence>
-      {/* Backdrop */}
       <motion.div
         key="backdrop"
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -132,7 +145,6 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
         initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
         onClick={onClose}
       >
-        {/* Panel */}
         <motion.div
           key="panel"
           className="relative w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl"
@@ -143,10 +155,8 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
           transition={{ type:"spring", damping:22, stiffness:280 }}
           onClick={e => e.stopPropagation()}
         >
-          {/* Decorative top line */}
           <div style={{ height:3, background:"linear-gradient(90deg,#D4A843,#F0C85A,#D4A843)" }} />
 
-          {/* Header */}
           <div className="flex items-center justify-between px-6 pt-5 pb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-yellow-400" />
@@ -154,13 +164,11 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
                 CHOOSE AVATAR
               </h2>
             </div>
-            <button onClick={onClose}
-              className="rounded-lg p-1.5 transition-colors hover:bg-white/10">
+            <button onClick={onClose} className="rounded-lg p-1.5 transition-colors hover:bg-white/10">
               <X className="h-4 w-4 text-gray-400" />
             </button>
           </div>
 
-          {/* Style filter tabs */}
           <div className="px-6 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
             {(["all", ...ALL_STYLES] as const).map(s => (
               <button
@@ -179,9 +187,7 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
             ))}
           </div>
 
-          {/* Preview + grid */}
           <div className="flex gap-4 px-6 pb-4">
-            {/* Large preview of selected */}
             <div className="shrink-0 flex flex-col items-center gap-2">
               <motion.div
                 key={selected}
@@ -205,7 +211,6 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
               </span>
             </div>
 
-            {/* Grid */}
             <div className="flex-1 overflow-y-auto" style={{ maxHeight:220 }}>
               <div className="grid grid-cols-5 gap-2">
                 {visible.map(a => {
@@ -245,7 +250,6 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
             </div>
           </div>
 
-          {/* Footer actions */}
           <div className="flex items-center justify-between px-6 py-4"
             style={{ borderTop:"1px solid rgba(255,255,255,0.08)" }}>
             <button
@@ -256,13 +260,14 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
               <Shuffle className="h-3.5 w-3.5" /> Random
             </button>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={onClose}
-                className="text-xs text-gray-400 hover:text-white">
+              <Button variant="ghost" size="sm" onClick={onClose} className="text-xs text-gray-400 hover:text-white">
                 Cancel
               </Button>
+              {/* 👇 updated button with saving state */}
               <button
                 onClick={handleConfirm}
-                className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold"
+                disabled={saving}
+                className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold disabled:opacity-60"
                 style={{
                   background:  "linear-gradient(90deg,#B8891E,#D4A843,#F0C85A)",
                   color:       "#1a1a2e",
@@ -270,7 +275,8 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
                   boxShadow:   "0 3px 16px rgba(212,168,67,0.45)",
                 }}
               >
-                <Check className="h-3.5 w-3.5" strokeWidth={3} /> Use This Avatar
+                <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                {saving ? "Saving..." : "Use This Avatar"}
               </button>
             </div>
           </div>
