@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import Logo from "@/components/Logo";
+import { avatarUrl as getAvatarUrl } from "@/pages/AvatarpPicker";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -25,42 +26,53 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   // 👇 NEW: fetch avatar from profiles table
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("avatar_url, full_name")
-      .eq("id", userId)
-      .single();
+const fetchProfile = async (userId: string) => {
+  const { data } = await supabase
+    .from("profiles")
+    .select("avatar_key, avatar_url, full_name")
+    .eq("id", userId)
+    .single();
 
-    if (data) {
-      if (data.avatar_url) setAvatarUrl(data.avatar_url);
-      if (data.full_name) setUserName(data.full_name);
+  if (data) {
+    if (data.full_name) setUserName(data.full_name);
+
+    // ✅ prefer avatar_key → convert to URL, fallback to avatar_url column
+    if (data.avatar_key) {
+      setAvatarUrl(getAvatarUrl(data.avatar_key));
+    } else if (data.avatar_url) {
+      setAvatarUrl(data.avatar_url);
     }
-  };
+  }
+};
+useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    const u = session?.user ?? null;
+    setUser(u);
+    setUserName(u?.user_metadata?.full_name ?? "Student");
+    if (u) fetchProfile(u.id);
+  });
 
-  useEffect(() => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const u = session?.user ?? null;
+    setUser(u);
+    setUserName(u?.user_metadata?.full_name ?? "Student");
+    if (u) fetchProfile(u.id);
+    if (!u) setAvatarUrl(null);
+  });
+
+  // ✅ re-fetch when avatar changes on profile page
+  const handleAvatarUpdate = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      setUserName(u?.user_metadata?.full_name ?? "Student");
-      if (u) fetchProfile(u.id); // 👈 fetch avatar on load
+      if (session?.user) fetchProfile(session.user.id);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      setUserName(u?.user_metadata?.full_name ?? "Student");
-      if (u) fetchProfile(u.id); // 👈 fetch avatar on auth change
-      if (!u) setAvatarUrl(null); // 👈 clear on logout
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
   };
+  window.addEventListener("avatar-updated", handleAvatarUpdate);
+
+  return () => {
+    subscription.unsubscribe();
+    window.removeEventListener("avatar-updated", handleAvatarUpdate);
+  };
+}, []);
 
   // 👇 NEW: reusable avatar component used in both desktop + mobile
   const UserAvatar = ({ size = "sm" }: { size?: "sm" | "md" }) => {

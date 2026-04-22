@@ -55,53 +55,32 @@ export default function Profile() {
       const { data: prof } = await (supabase
         .from("profiles")
         .select("*")
-        .eq("id", uid)
+        .eq("id", uid)        // ✅ must be "id" not "user_id"
         .maybeSingle() as any);
 
       if (prof) {
-        // 👇 FIX: fallback chain for full_name
         const fullName =
           prof.full_name ||
           session.user.user_metadata?.full_name ||
-          session.user.email?.split("@")[0] || // use email prefix as last resort
-          "";
+          session.user.email?.split("@")[0] || "";
 
         const p: ProfileData = {
           full_name:    fullName,
-          email:        prof.email || session.user.email || "",
+          email:        prof.email        || session.user.email || "",
           college_name: prof.college_name || "",
           departments:  prof.departments  || [],
           plan_type:    prof.plan_type    || "free",
           created_at:   prof.created_at,
           avatar_key:   prof.avatar_key   || null,
-          avatar_url:   prof.avatar_url   || null, // 👈 NEW
+          avatar_url:   prof.avatar_url   || null,
         };
         setProfile(p);
         setEditName(p.full_name);
         setEditCollege(p.college_name);
 
-        const stored = localStorage.getItem(`avatar_${uid}`);
-        setAvatarKey(p.avatar_key || stored || "adventurer:luna");
-      } else {
-        // No profile row yet — still show user's name from auth metadata
-        const fullName =
-          session.user.user_metadata?.full_name ||
-          session.user.email?.split("@")[0] ||
-          "";
-        setProfile({
-          full_name:    fullName,
-          email:        session.user.email || "",
-          college_name: "",
-          departments:  [],
-          plan_type:    "free",
-          created_at:   session.user.created_at,
-          avatar_key:   null,
-          avatar_url:   null,
-        });
-        setEditName(fullName);
-        setAvatarKey("adventurer:luna");
+        // ✅ avatar_key from DB is the source of truth — remove localStorage fallback
+        setAvatarKey(prof.avatar_key || "adventurer:luna");
       }
-
       const { data: results } = await (supabase
         .from("test_results")
         .select("score, total_questions")
@@ -122,13 +101,14 @@ export default function Profile() {
   }, []);
 
   /* ── Save avatar — now receives key + url from picker ──── */
-  const handleAvatarSelect = (key: string, url: string) => { // 👈 updated signature
-    setAvatarKey(key);
-    localStorage.setItem(`avatar_${userId}`, key);
-    setProfile(p => p ? { ...p, avatar_key: key, avatar_url: url } : p);
-    toast.success("Avatar updated!");
-    // No Supabase call here — AvatarPicker already saved it ✅
-  };
+const handleAvatarSelect = (key: string, url: string) => {
+  setAvatarKey(key);
+  setProfile(p => p ? { ...p, avatar_key: key, avatar_url: url } : p);
+  toast.success("Avatar updated!");
+
+  // ✅ tell navbar to re-fetch
+  window.dispatchEvent(new CustomEvent("avatar-updated"));
+};
 
   /* ── Save name/college ─────────────────────────────────── */
   const handleSave = async () => {
