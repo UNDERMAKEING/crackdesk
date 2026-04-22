@@ -75,12 +75,14 @@ export default function Signup() {
 
     if (data.user) {
       await (supabase.from("profiles").upsert({
-        user_id: data.user.id,
+        id: data.user.id,        // ✅ matches your primary key column
         full_name: fullName,
         email,
         college_name: college,
         departments: selectedDepts,
         plan_type: "free",
+        avatar_key: null,
+        avatar_url: null,
       } as any) as any);
 
       localStorage.setItem("generating_questions", "true");
