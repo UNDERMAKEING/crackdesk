@@ -2,9 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Shuffle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase"; // 👈 NEW
-
-/* ── Avatar catalogue ──────────────────────────────────────── */
+import { supabase } from "@/lib/supabase";
 
 type AvatarStyle =
   | "adventurer"
@@ -69,7 +67,6 @@ const STYLE_LABELS: Record<AvatarStyle, string> = {
 
 const ALL_STYLES = Array.from(new Set(AVATAR_LIST.map(a => a.style))) as AvatarStyle[];
 
-/* ── Exported avatar img component ──────────────────────────── */
 export function AvatarImg({
   avatarKey,
   size = 64,
@@ -92,18 +89,16 @@ export function AvatarImg({
   );
 }
 
-/* ── Main AvatarPicker modal ─────────────────────────────────── */
 interface AvatarPickerProps {
-  currentKey:  string | null | undefined;
-  onSelect:    (key: string, url: string) => void; // 👈 now passes url too
-  onClose:     () => void;
-  userId:      string; // 👈 NEW
+  currentKey: string | null | undefined;
+  onSelect:   (key: string, url: string) => void;
+  onClose:    () => void;
 }
 
-export default function AvatarPicker({ currentKey, onSelect, onClose, userId }: AvatarPickerProps) {
+export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPickerProps) {
   const [selected,    setSelected]    = useState<string>(currentKey || "adventurer:luna");
   const [activeStyle, setActiveStyle] = useState<AvatarStyle | "all">("all");
-  const [saving,      setSaving]      = useState(false); // 👈 NEW
+  const [saving,      setSaving]      = useState(false);
 
   const visible = activeStyle === "all"
     ? AVATAR_LIST
@@ -115,28 +110,34 @@ export default function AvatarPicker({ currentKey, onSelect, onClose, userId }: 
     setSelected(pick.key);
   };
 
-  // 👇 NEW: saves to Supabase before calling onSelect
-const handleConfirm = async () => {
-  setSaving(true);
-  const url = avatarUrl(selected);
+  const handleConfirm = async () => {
+    setSaving(true);
+    const url = avatarUrl(selected);
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .update({ avatar_key: selected, avatar_url: url })
-    .eq("id", userId)
-    .select(); // 👈 add .select() to see what was updated
+    // ✅ always get fresh session — no prop needed
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.error("No session");
+      setSaving(false);
+      return;
+    }
 
-  console.log("Avatar update result:", { data, error, userId, selected, url });
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_key: selected, avatar_url: url })
+      .eq("id", session.user.id);
 
-  setSaving(false);
-  if (error) {
-    console.error("Avatar save error:", error.message);
-    return;
-  }
+    setSaving(false);
 
-  onSelect(selected, url);
-  onClose();
-};
+    if (error) {
+      console.error("Avatar save error:", error.message);
+      return;
+    }
+
+    onSelect(selected, url);
+    onClose();
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -264,16 +265,15 @@ const handleConfirm = async () => {
               <Button variant="ghost" size="sm" onClick={onClose} className="text-xs text-gray-400 hover:text-white">
                 Cancel
               </Button>
-              {/* 👇 updated button with saving state */}
               <button
                 onClick={handleConfirm}
                 disabled={saving}
                 className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold disabled:opacity-60"
                 style={{
-                  background:  "linear-gradient(90deg,#B8891E,#D4A843,#F0C85A)",
-                  color:       "#1a1a2e",
-                  letterSpacing:1,
-                  boxShadow:   "0 3px 16px rgba(212,168,67,0.45)",
+                  background:   "linear-gradient(90deg,#B8891E,#D4A843,#F0C85A)",
+                  color:        "#1a1a2e",
+                  letterSpacing: 1,
+                  boxShadow:    "0 3px 16px rgba(212,168,67,0.45)",
                 }}
               >
                 <Check className="h-3.5 w-3.5" strokeWidth={3} />

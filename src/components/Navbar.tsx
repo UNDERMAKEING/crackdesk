@@ -8,20 +8,20 @@ import Logo from "@/components/Logo";
 import { avatarUrl as getAvatarUrl } from "@/components/AvatarPicker";
 
 const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Mock Test", href: "/mock-test" },
-  { label: "Test Library", href: "/test-library" },
-  { label: "AI Interview", href: "/ai-interview", badge: "NEW" },
-  { label: "History", href: "/test-history" },
-  { label: "Pricing", href: "/pricing" },
+  { label: "Home",        href: "/"            },
+  { label: "Dashboard",   href: "/dashboard"   },
+  { label: "Mock Test",   href: "/mock-test"   },
+  { label: "Test Library",href: "/test-library"},
+  { label: "AI Interview",href: "/ai-interview", badge: "NEW" },
+  { label: "History",     href: "/test-history"},
+  { label: "Pricing",     href: "/pricing"     },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user,       setUser]       = useState<any>(null);
   const [userName,   setUserName]   = useState("");
-  const [avatarUrl,  setAvatarUrl]  = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -30,22 +30,19 @@ export default function Navbar() {
       .from("profiles")
       .select("avatar_key, avatar_url, full_name")
       .eq("id", userId)
-      .maybeSingle(); // ✅ fixes 406 error
+      .maybeSingle();
 
     if (data) {
-      if (data.full_name) setUserName(data.full_name);
-      if (data.avatar_key) {
-        setAvatarUrl(getAvatarUrl(data.avatar_key));
-      } else if (data.avatar_url) {
-        setAvatarUrl(data.avatar_url);
-      }
+      if (data.full_name)  setUserName(data.full_name);
+      if (data.avatar_key) setUserAvatar(getAvatarUrl(data.avatar_key));
+      else if (data.avatar_url) setUserAvatar(data.avatar_url);
     }
   };
 
-  // ✅ handleLogout defined BEFORE UserAvatar so it's in scope
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setAvatarUrl(null);
+    setUserAvatar(null);
+    setUser(null);
     navigate("/");
   };
 
@@ -53,48 +50,46 @@ export default function Navbar() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
-      setUserName(u?.user_metadata?.full_name ?? "Student");
+      setUserName(u?.user_metadata?.full_name ?? "");
       if (u) fetchProfile(u.id);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null;
       setUser(u);
-      setUserName(u?.user_metadata?.full_name ?? "Student");
+      setUserName(u?.user_metadata?.full_name ?? "");
       if (u) fetchProfile(u.id);
-      if (!u) setAvatarUrl(null);
+      if (!u) { setUserAvatar(null); setUserName(""); }
     });
 
-    // ✅ listen for avatar updates from profile page
-    const handleAvatarUpdate = () => {
+    // listen for avatar update from profile page
+    const onAvatarUpdated = () => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) fetchProfile(session.user.id);
       });
     };
-    window.addEventListener("avatar-updated", handleAvatarUpdate);
+    window.addEventListener("avatar-updated", onAvatarUpdated);
 
     return () => {
       subscription.unsubscribe();
-      window.removeEventListener("avatar-updated", handleAvatarUpdate);
+      window.removeEventListener("avatar-updated", onAvatarUpdated);
     };
   }, []);
 
-  // ✅ UserAvatar defined AFTER handleLogout — no reference error
   const UserAvatar = ({ size = "sm" }: { size?: "sm" | "md" }) => {
-    const dim = size === "md" ? "h-8 w-8" : "h-7 w-7";
-    const textSize = size === "md" ? "text-sm" : "text-xs";
-
-    return avatarUrl ? (
+    const dim      = size === "md" ? "h-8 w-8" : "h-7 w-7";
+    const textSize = size === "md" ? "text-sm"  : "text-xs";
+    return userAvatar ? (
       <img
-        src={avatarUrl}
+        src={userAvatar}
         alt={userName}
         className={`${dim} rounded-full object-cover ring-2 ring-secondary`}
-        onError={() => setAvatarUrl(null)}
+        onError={() => setUserAvatar(null)}
       />
     ) : (
       <div className={`flex ${dim} items-center justify-center rounded-full bg-secondary`}>
         <span className={`${textSize} font-bold text-primary`}>
-          {userName.charAt(0).toUpperCase()}
+          {userName ? userName.charAt(0).toUpperCase() : "?"}
         </span>
       </div>
     );
@@ -104,7 +99,6 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
 
-        {/* LOGO */}
         <Link to="/" className="flex items-center gap-2">
           <div className="transition-transform duration-300 hover:scale-110">
             <Logo className="h-10 w-10" />
@@ -114,7 +108,6 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop Nav Links */}
         <div className="hidden items-center gap-1 md:flex">
           {navLinks.map((l) => (
             <Link
@@ -136,7 +129,6 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Desktop Auth */}
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
@@ -144,9 +136,7 @@ export default function Navbar() {
                 <UserAvatar size="sm" />
                 <span className="text-sm font-medium text-foreground">{userName}</span>
               </Link>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                Log out
-              </Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>Log out</Button>
             </>
           ) : (
             <>
@@ -160,7 +150,6 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Toggle */}
         <button
           className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -169,7 +158,6 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -211,8 +199,7 @@ export default function Navbar() {
                       <span className="font-medium">{userName}</span>
                     </Link>
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant="ghost" size="sm"
                       className="w-full justify-start px-3"
                       onClick={() => { setMobileOpen(false); handleLogout(); }}
                     >

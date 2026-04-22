@@ -117,13 +117,12 @@ useEffect(() => {
   load();
 }, []);
   /* ── Save avatar — now receives key + url from picker ──── */
+// remove userId state and prop, change onSelect handler
 const handleAvatarSelect = (key: string, url: string) => {
   setAvatarKey(key);
   setProfile(p => p ? { ...p, avatar_key: key, avatar_url: url } : p);
   toast.success("Avatar updated!");
-
-  // ✅ tell navbar to re-fetch
-  window.dispatchEvent(new CustomEvent("avatar-updated"));
+  window.dispatchEvent(new CustomEvent("avatar-updated")); // ✅ updates navbar
 };
 
   /* ── Save name/college ─────────────────────────────────── */
@@ -326,13 +325,12 @@ const handleSave = async () => {
       <Footer />
 
       {/* 👇 updated: passes userId, and new onSelect signature */}
-      {showPicker && userId && (
-        <AvatarPicker
-          currentKey={avatarKey}
-          userId={userId}
-          onSelect={handleAvatarSelect}
-          onClose={() => setShowPicker(false)}
-        />
+        {showPicker && (
+          <AvatarPicker
+            currentKey={avatarKey}
+            onSelect={handleAvatarSelect}
+            onClose={() => setShowPicker(false)}
+          />
       )}
     </div>
   );
