@@ -110,33 +110,39 @@ export default function AvatarPicker({ currentKey, onSelect, onClose }: AvatarPi
     setSelected(pick.key);
   };
 
-  const handleConfirm = async () => {
-    setSaving(true);
-    const url = avatarUrl(selected);
+    const handleConfirm = async () => {
+      setSaving(true);
+      const url = avatarUrl(selected);
 
-    // ✅ always get fresh session — no prop needed
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      console.error("No session");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        alert("No session! Please log in again.");
+        setSaving(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ avatar_key: selected, avatar_url: url })
+        .eq("id", session.user.id)
+        .select(); // 👈 returns updated row
+
       setSaving(false);
-      return;
-    }
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({ avatar_key: selected, avatar_url: url })
-      .eq("id", session.user.id);
+      if (error) {
+        alert("Save failed: " + error.message);
+        return;
+      }
 
-    setSaving(false);
+      if (!data || data.length === 0) {
+        alert("No rows updated! Session ID: " + session.user.id);
+        return;
+      }
 
-    if (error) {
-      console.error("Avatar save error:", error.message);
-      return;
-    }
-
-    onSelect(selected, url);
-    onClose();
-  };
+      alert("Saved! avatar_key: " + data[0].avatar_key); // 👈 confirm it worked
+      onSelect(selected, url);
+      onClose();
+    };
 
   return (
     <AnimatePresence>

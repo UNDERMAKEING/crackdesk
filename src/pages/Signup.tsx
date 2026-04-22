@@ -75,11 +75,11 @@ export default function Signup() {
 
     if (data.user) {
       await (supabase.from("profiles").upsert({
-        id: data.user.id,
+        id: data.user.id,        // ✅ must be id
         full_name: fullName,
         email,
         college_name: college,
-        departments: selectedDepts,   // ✅ already an array
+        departments: selectedDepts,
         plan_type: "free",
         avatar_key: "adventurer:luna",
         avatar_url: null,
