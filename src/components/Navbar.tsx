@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import Logo from "@/components/Logo";
-import { avatarUrl as getAvatarUrl } from "@/pages/AvatarpPicker";
+import { avatarUrl as getAvatarUrl } from "@/components/AvatarpPicker";
 
 const navLinks = [
   { label: "Home", href: "/" },
