@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import Logo from "@/components/Logo";
-import { avatarUrl as getAvatarUrl } from "@/components/AvatarpPicker";
+import { avatarUrl as getAvatarUrl } from "@/components/AvatarPicker";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -19,62 +19,67 @@ const navLinks = [
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [userName, setUserName] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // 👈 NEW
+  const [user,       setUser]       = useState<any>(null);
+  const [userName,   setUserName]   = useState("");
+  const [avatarUrl,  setAvatarUrl]  = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 👇 NEW: fetch avatar from profiles table
-const fetchProfile = async (userId: string) => {
-  const { data } = await supabase
-    .from("profiles")
-    .select("avatar_key, avatar_url, full_name")
-    .eq("id", userId)
-    .single();
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("avatar_key, avatar_url, full_name")
+      .eq("id", userId)
+      .maybeSingle(); // ✅ fixes 406 error
 
-  if (data) {
-    if (data.full_name) setUserName(data.full_name);
-
-    // ✅ prefer avatar_key → convert to URL, fallback to avatar_url column
-    if (data.avatar_key) {
-      setAvatarUrl(getAvatarUrl(data.avatar_key));
-    } else if (data.avatar_url) {
-      setAvatarUrl(data.avatar_url);
+    if (data) {
+      if (data.full_name) setUserName(data.full_name);
+      if (data.avatar_key) {
+        setAvatarUrl(getAvatarUrl(data.avatar_key));
+      } else if (data.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
     }
-  }
-};
-useEffect(() => {
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    const u = session?.user ?? null;
-    setUser(u);
-    setUserName(u?.user_metadata?.full_name ?? "Student");
-    if (u) fetchProfile(u.id);
-  });
+  };
 
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-    const u = session?.user ?? null;
-    setUser(u);
-    setUserName(u?.user_metadata?.full_name ?? "Student");
-    if (u) fetchProfile(u.id);
-    if (!u) setAvatarUrl(null);
-  });
+  // ✅ handleLogout defined BEFORE UserAvatar so it's in scope
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setAvatarUrl(null);
+    navigate("/");
+  };
 
-  // ✅ re-fetch when avatar changes on profile page
-  const handleAvatarUpdate = () => {
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) fetchProfile(session.user.id);
+      const u = session?.user ?? null;
+      setUser(u);
+      setUserName(u?.user_metadata?.full_name ?? "Student");
+      if (u) fetchProfile(u.id);
     });
-  };
-  window.addEventListener("avatar-updated", handleAvatarUpdate);
 
-  return () => {
-    subscription.unsubscribe();
-    window.removeEventListener("avatar-updated", handleAvatarUpdate);
-  };
-}, []);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      setUserName(u?.user_metadata?.full_name ?? "Student");
+      if (u) fetchProfile(u.id);
+      if (!u) setAvatarUrl(null);
+    });
 
-  // 👇 NEW: reusable avatar component used in both desktop + mobile
+    // ✅ listen for avatar updates from profile page
+    const handleAvatarUpdate = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) fetchProfile(session.user.id);
+      });
+    };
+    window.addEventListener("avatar-updated", handleAvatarUpdate);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("avatar-updated", handleAvatarUpdate);
+    };
+  }, []);
+
+  // ✅ UserAvatar defined AFTER handleLogout — no reference error
   const UserAvatar = ({ size = "sm" }: { size?: "sm" | "md" }) => {
     const dim = size === "md" ? "h-8 w-8" : "h-7 w-7";
     const textSize = size === "md" ? "text-sm" : "text-xs";
@@ -84,7 +89,7 @@ useEffect(() => {
         src={avatarUrl}
         alt={userName}
         className={`${dim} rounded-full object-cover ring-2 ring-secondary`}
-        onError={() => setAvatarUrl(null)} // fallback if image fails
+        onError={() => setAvatarUrl(null)}
       />
     ) : (
       <div className={`flex ${dim} items-center justify-center rounded-full bg-secondary`}>
@@ -136,10 +141,8 @@ useEffect(() => {
           {user ? (
             <>
               <Link to="/profile" className="flex items-center gap-2">
-                <UserAvatar size="sm" /> {/* 👈 uses avatar or initial */}
-                <span className="text-sm font-medium text-foreground">
-                  {userName}
-                </span>
+                <UserAvatar size="sm" />
+                <span className="text-sm font-medium text-foreground">{userName}</span>
               </Link>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Log out
@@ -157,7 +160,7 @@ useEffect(() => {
           )}
         </div>
 
-        {/* Mobile Toggle Button */}
+        {/* Mobile Toggle */}
         <button
           className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -166,7 +169,7 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* Mobile Menu Drawer */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -176,8 +179,6 @@ useEffect(() => {
             className="overflow-hidden border-t border-border bg-background md:hidden"
           >
             <div className="flex flex-col gap-1 p-4">
-
-              {/* Nav Links */}
               {navLinks.map((l) => (
                 <Link
                   key={l.href}
@@ -198,7 +199,6 @@ useEffect(() => {
                 </Link>
               ))}
 
-              {/* Auth Section */}
               <div className="mt-3 border-t border-border pt-3 flex flex-col gap-2">
                 {user ? (
                   <>
@@ -207,17 +207,14 @@ useEffect(() => {
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                     >
-                      <UserAvatar size="md" /> {/* 👈 uses avatar or initial */}
+                      <UserAvatar size="md" />
                       <span className="font-medium">{userName}</span>
                     </Link>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="w-full justify-start px-3"
-                      onClick={() => {
-                        setMobileOpen(false);
-                        handleLogout();
-                      }}
+                      onClick={() => { setMobileOpen(false); handleLogout(); }}
                     >
                       Log out
                     </Button>
@@ -233,7 +230,6 @@ useEffect(() => {
                   </>
                 )}
               </div>
-
             </div>
           </motion.div>
         )}
