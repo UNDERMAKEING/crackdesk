@@ -121,9 +121,9 @@ export default function AvatarPicker({ currentKey, onSelect, onClose, userId }: 
     const url = avatarUrl(selected);
 
     const { error } = await supabase
-      .from("profiles")
-      .update({ avatar_key: selected, avatar_url: url })
-      .eq("user_id", userId);
+   .from("profiles")
+   .update({ avatar_key: selected, avatar_url: url })
+   .eq("id", userId);
 
     setSaving(false);
 

@@ -55,7 +55,7 @@ export default function Profile() {
       const { data: prof } = await (supabase
         .from("profiles")
         .select("*")
-        .eq("user_id", uid)
+        .eq("id", uid)
         .maybeSingle() as any);
 
       if (prof) {
@@ -139,7 +139,7 @@ export default function Profile() {
     const { error } = await (supabase
       .from("profiles")
       .update({ full_name: editName, college_name: editCollege })
-      .eq("user_id", session.user.id) as any);
+      .eq("id", session.user.id) as any);
 
     if (error) {
       toast.error("Failed to update profile");
