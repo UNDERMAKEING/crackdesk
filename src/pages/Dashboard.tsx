@@ -288,14 +288,6 @@ export default function Dashboard() {
                     +{Math.max(0, stats.bestScore - stats.avgScore)}% above average
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {["", ""].map(t => (
-                    <button key={t} style={{
-                      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                      color: "rgba(255,255,255,0.6)", borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: "pointer"
-                    }}>{t}</button>
-                  ))}
-                </div>
               </div>
               <div style={{ marginTop: 20 }}>
                 <StackedBar months={monthLabels} data={monthData} />
