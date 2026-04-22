@@ -116,26 +116,27 @@ export default function AvatarPicker({ currentKey, onSelect, onClose, userId }: 
   };
 
   // 👇 NEW: saves to Supabase before calling onSelect
-  const handleConfirm = async () => {
-    setSaving(true);
-    const url = avatarUrl(selected);
+const handleConfirm = async () => {
+  setSaving(true);
+  const url = avatarUrl(selected);
 
-    const { error } = await supabase
-   .from("profiles")
-   .update({ avatar_key: selected, avatar_url: url })
-   .eq("id", userId);
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ avatar_key: selected, avatar_url: url })
+    .eq("id", userId)
+    .select(); // 👈 add .select() to see what was updated
 
-    setSaving(false);
+  console.log("Avatar update result:", { data, error, userId, selected, url });
 
-    if (error) {
-      console.error("Failed to save avatar:", error.message);
-      return;
-    }
+  setSaving(false);
+  if (error) {
+    console.error("Avatar save error:", error.message);
+    return;
+  }
 
-    onSelect(selected, url);
-    onClose();
-  };
-
+  onSelect(selected, url);
+  onClose();
+};
   return (
     <AnimatePresence>
       <motion.div

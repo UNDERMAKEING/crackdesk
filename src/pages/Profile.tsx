@@ -45,61 +45,77 @@ export default function Profile() {
   const [avatarKey,   setAvatarKey]   = useState<string | null>(null);
   const [userId,      setUserId]      = useState<string>(""); // 👈 NEW
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-      const uid = session.user.id;
-      setUserId(uid); // 👈 store userId in state
+useEffect(() => {
+  const load = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const uid = session.user.id;
+    setUserId(uid);
 
-      const { data: prof } = await (supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", uid)        // ✅ must be "id" not "user_id"
-        .maybeSingle() as any);
+    const { data: prof } = await (supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", uid)        // ✅ id not user_id
+      .maybeSingle() as any);
 
-      if (prof) {
-        const fullName =
-          prof.full_name ||
-          session.user.user_metadata?.full_name ||
-          session.user.email?.split("@")[0] || "";
+    if (prof) {
+      const fullName =
+        prof.full_name ||
+        session.user.user_metadata?.full_name ||
+        session.user.email?.split("@")[0] || "";
 
-        const p: ProfileData = {
-          full_name:    fullName,
-          email:        prof.email        || session.user.email || "",
-          college_name: prof.college_name || "",
-          departments:  prof.departments  || [],
-          plan_type:    prof.plan_type    || "free",
-          created_at:   prof.created_at,
-          avatar_key:   prof.avatar_key   || null,
-          avatar_url:   prof.avatar_url   || null,
-        };
-        setProfile(p);
-        setEditName(p.full_name);
-        setEditCollege(p.college_name);
+      const p: ProfileData = {
+        full_name:    fullName,
+        email:        prof.email        || session.user.email || "",
+        college_name: prof.college_name || "",
+        departments:  prof.departments  || [],
+        plan_type:    prof.plan_type    || "free",
+        created_at:   prof.created_at,
+        avatar_key:   prof.avatar_key   || null,
+        avatar_url:   prof.avatar_url   || null,
+      };
+      setProfile(p);
+      setEditName(p.full_name);
+      setEditCollege(p.college_name);
+      setAvatarKey(prof.avatar_key || "adventurer:luna"); // ✅ DB is source of truth
+    } else {
+      // No profile row yet
+      const fullName =
+        session.user.user_metadata?.full_name ||
+        session.user.email?.split("@")[0] || "";
+      setProfile({
+        full_name:    fullName,
+        email:        session.user.email || "",
+        college_name: "",
+        departments:  [],
+        plan_type:    "free",
+        created_at:   session.user.created_at,
+        avatar_key:   null,
+        avatar_url:   null,
+      });
+      setEditName(fullName);
+      setAvatarKey("adventurer:luna");
+    }
 
-        // ✅ avatar_key from DB is the source of truth — remove localStorage fallback
-        setAvatarKey(prof.avatar_key || "adventurer:luna");
-      }
-      const { data: results } = await (supabase
-        .from("test_results")
-        .select("score, total_questions")
-        .eq("user_id", uid) as any);
+    const { data: results } = await (supabase
+      .from("test_results")
+      .select("score, total_questions")
+      .eq("user_id", uid) as any);
 
-      if (results && results.length > 0) {
-        const scores = results.map((r: any) => Math.round((r.score / r.total_questions) * 100));
-        setStats({
-          testsTaken: results.length,
-          avgScore:   Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length),
-          bestScore:  Math.max(...scores),
-        });
-      }
+    if (results && results.length > 0) {
+      const scores = results.map((r: any) =>
+        Math.round((r.score / r.total_questions) * 100));
+      setStats({
+        testsTaken: results.length,
+        avgScore:   Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length),
+        bestScore:  Math.max(...scores),
+      });
+    }
 
-      setLoading(false);
-    };
-    load();
-  }, []);
-
+    setLoading(false);
+  };
+  load();
+}, []);
   /* ── Save avatar — now receives key + url from picker ──── */
 const handleAvatarSelect = (key: string, url: string) => {
   setAvatarKey(key);
@@ -111,26 +127,25 @@ const handleAvatarSelect = (key: string, url: string) => {
 };
 
   /* ── Save name/college ─────────────────────────────────── */
-  const handleSave = async () => {
-    setSaving(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return;
+const handleSave = async () => {
+  setSaving(true);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return;
 
-    const { error } = await (supabase
-      .from("profiles")
-      .update({ full_name: editName, college_name: editCollege })
-      .eq("id", session.user.id) as any);
+  const { error } = await (supabase
+    .from("profiles")
+    .update({ full_name: editName, college_name: editCollege })
+    .eq("id", session.user.id) as any); // ✅ id not user_id
 
-    if (error) {
-      toast.error("Failed to update profile");
-    } else {
-      setProfile(p => p ? { ...p, full_name: editName, college_name: editCollege } : p);
-      setEditing(false);
-      toast.success("Profile updated!");
-    }
-    setSaving(false);
-  };
-
+  if (error) {
+    toast.error("Failed to update profile");
+  } else {
+    setProfile(p => p ? { ...p, full_name: editName, college_name: editCollege } : p);
+    setEditing(false);
+    toast.success("Profile updated!");
+  }
+  setSaving(false);
+};
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-muted/30">
