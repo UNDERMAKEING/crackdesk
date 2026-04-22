@@ -20,18 +20,38 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [userName, setUserName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // 👈 NEW
   const location = useLocation();
   const navigate = useNavigate();
 
+  // 👇 NEW: fetch avatar from profiles table
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("avatar_url, full_name")
+      .eq("id", userId)
+      .single();
+
+    if (data) {
+      if (data.avatar_url) setAvatarUrl(data.avatar_url);
+      if (data.full_name) setUserName(data.full_name);
+    }
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setUserName(session?.user?.user_metadata?.full_name ?? "Student");
+      const u = session?.user ?? null;
+      setUser(u);
+      setUserName(u?.user_metadata?.full_name ?? "Student");
+      if (u) fetchProfile(u.id); // 👈 fetch avatar on load
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setUserName(session?.user?.user_metadata?.full_name ?? "Student");
+      const u = session?.user ?? null;
+      setUser(u);
+      setUserName(u?.user_metadata?.full_name ?? "Student");
+      if (u) fetchProfile(u.id); // 👈 fetch avatar on auth change
+      if (!u) setAvatarUrl(null); // 👈 clear on logout
     });
 
     return () => subscription.unsubscribe();
@@ -40,6 +60,27 @@ export default function Navbar() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  // 👇 NEW: reusable avatar component used in both desktop + mobile
+  const UserAvatar = ({ size = "sm" }: { size?: "sm" | "md" }) => {
+    const dim = size === "md" ? "h-8 w-8" : "h-7 w-7";
+    const textSize = size === "md" ? "text-sm" : "text-xs";
+
+    return avatarUrl ? (
+      <img
+        src={avatarUrl}
+        alt={userName}
+        className={`${dim} rounded-full object-cover ring-2 ring-secondary`}
+        onError={() => setAvatarUrl(null)} // fallback if image fails
+      />
+    ) : (
+      <div className={`flex ${dim} items-center justify-center rounded-full bg-secondary`}>
+        <span className={`${textSize} font-bold text-primary`}>
+          {userName.charAt(0).toUpperCase()}
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -83,11 +124,7 @@ export default function Navbar() {
           {user ? (
             <>
               <Link to="/profile" className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary">
-                  <span className="text-xs font-bold text-primary">
-                    {userName.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                <UserAvatar size="sm" /> {/* 👈 uses avatar or initial */}
                 <span className="text-sm font-medium text-foreground">
                   {userName}
                 </span>
@@ -149,7 +186,7 @@ export default function Navbar() {
                 </Link>
               ))}
 
-              {/* ✅ Auth Section — FIXED for mobile */}
+              {/* Auth Section */}
               <div className="mt-3 border-t border-border pt-3 flex flex-col gap-2">
                 {user ? (
                   <>
@@ -158,11 +195,7 @@ export default function Navbar() {
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary">
-                        <span className="text-xs font-bold text-primary">
-                          {userName.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
+                      <UserAvatar size="md" /> {/* 👈 uses avatar or initial */}
                       <span className="font-medium">{userName}</span>
                     </Link>
                     <Button
@@ -180,14 +213,10 @@ export default function Navbar() {
                 ) : (
                   <>
                     <Link to="/login" onClick={() => setMobileOpen(false)}>
-                      <Button variant="ghost" size="sm" className="w-full">
-                        Log in
-                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full">Log in</Button>
                     </Link>
                     <Link to="/signup" onClick={() => setMobileOpen(false)}>
-                      <Button variant="hero" size="sm" className="w-full">
-                        Sign up free
-                      </Button>
+                      <Button variant="hero" size="sm" className="w-full">Sign up free</Button>
                     </Link>
                   </>
                 )}
