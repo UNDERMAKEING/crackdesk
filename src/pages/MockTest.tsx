@@ -443,29 +443,29 @@ export default function MockTest() {
                             </span>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-foreground leading-snug">{q.question}</p>
-                              <span className="mt-1 inline-block text-xs font-semibold text-primary bg-secondary px-2 py-0.5 rounded">
-                                {q.skill}
-                              </span>
-                            </div>
-                            <div className="shrink-0">
-                              {isCorrect ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 px-2 py-1 rounded-full">
-                                  <CheckCircle2 className="h-3 w-3" /> Correct
+                              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-semibold text-primary bg-secondary px-2 py-0.5 rounded">
+                                  {q.skill}
                                 </span>
-                              ) : isSkipped ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                                  — Skipped
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-destructive bg-destructive/10 px-2 py-1 rounded-full">
-                                  <XCircle className="h-3 w-3" /> Wrong
-                                </span>
-                              )}
+                                {isCorrect ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">
+                                    <CheckCircle2 className="h-3 w-3" /> Correct
+                                  </span>
+                                ) : isSkipped ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                                    — Skipped
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+                                    <XCircle className="h-3 w-3" /> Wrong
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
 
                           {/* Two column: Your answer | Correct answer */}
-                          <div className="grid grid-cols-2 divide-x divide-border/50">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border/50">
 
                             {/* LEFT col — Your answer */}
                             <div className={`px-3 py-2.5 ${
