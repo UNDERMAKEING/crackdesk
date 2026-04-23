@@ -1,4 +1,4 @@
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
 export type GeneratedQuestion = {
   question: string;
@@ -39,28 +39,30 @@ Return ONLY a valid JSON array with exactly 20 questions in this exact format:
 correct is the index (0-3) of the correct option. skill is a short category like "React", "SQL", "System Design", etc. Return only the JSON array, no other text.`;
 
   const response = await callWithRetry(() =>
-    fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 4000,
-        },
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 4000,
       }),
     })
   );
 
   if (!response.ok) {
     const errData = await response.json().catch(() => null);
-    console.error("Gemini error:", JSON.stringify(errData, null, 2));
+    console.error("Groq error:", JSON.stringify(errData, null, 2));
     throw new Error(errData?.error?.message || `API error: ${response.status}`);
   }
 
   const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Empty response from Gemini");
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error("Empty response from Groq");
 
   const cleaned = text.replace(/```json|```/g, "").trim();
 
