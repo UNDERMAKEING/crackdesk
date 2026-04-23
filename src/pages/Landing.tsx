@@ -15,8 +15,8 @@ const fadeUp = {
 
 const steps = [
   { icon: FileCheck, title: "Paste Your JD", desc: "Copy the job description from any portal and paste it in our smart text box." },
-  { icon: Brain, title: "AI Generates Test", desc: "Our AI reads every skill, technology and requirement to craft a tailored 20-question quiz." },
-  { icon: Award, title: "Get Your Score", desc: "Receive a detailed score report with strengths, weaknesses and a downloadable PDF certificate." },
+  { icon: Brain, title: "AI Generates Test", desc: "Our AI Analyzes every skill, technology and requirement to craft a tailored 20-question quiz." },
+  { icon: Award, title: "Get Your Score", desc: "Receive a detailed skill by skill improvement performance report with improvement suggestions and a downloadable PDF certificate." },
 ];
 
 const testimonials = [
