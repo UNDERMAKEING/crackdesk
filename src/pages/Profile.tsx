@@ -166,7 +166,36 @@ const handleSave = async () => {
       <Navbar />
 
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className="flex items-center gap-3">
+          <motion.div
+            initial={{ scale:0.8, opacity:0 }}
+            animate={{ scale:1,   opacity:1 }}
+            className="relative shrink-0 cursor-pointer group"
+            onClick={() => setShowPicker(true)}
+            title="Change avatar"
+          >
+            <AvatarImg avatarKey={avatarKey} size={48} className="ring-2 ring-primary/40 ring-offset-2" />
+            <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ background:"rgba(0,0,0,0.45)" }}>
+              <Camera className="h-4 w-4 text-white" />
+            </div>
+          </motion.div>
+
+          <div>
+            <motion.h1
+              initial={{ opacity:0, x:-12 }}
+              animate={{ opacity:1, x:0 }}
+              className="font-display text-2xl font-bold text-foreground md:text-3xl"
+            >
+              {firstName} {/* ✅ now shows actual name */}
+            </motion.h1>
+            <p className="text-sm text-muted-foreground">
+              Manage your account and view your stats
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
           <motion.div initial={{ opacity:0, y:15 }} animate={{ opacity:1, y:0 }} className="lg:col-span-2">
             <Card className="shadow-card border-border">
               <CardContent className="p-6">
